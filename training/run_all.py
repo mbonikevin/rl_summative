@@ -11,7 +11,8 @@ from training import dqn_training, pg_training
 
 def run(job):
     torch.set_num_threads(2)
-    module, cfg = job
+    kind, cfg = job
+    module = dqn_training if kind == "dqn" else pg_training
     try:
         module.train(cfg)
     except Exception as e:  # one failed run should not stop the whole sweep
@@ -19,6 +20,6 @@ def run(job):
 
 
 if __name__ == "__main__":
-    jobs = [(pg_training, c) for c in pg_training.ALL.values()] + [(dqn_training, c) for c in dqn_training.CONFIGS]
+    jobs = [("pg", c) for c in pg_training.ALL.values()] + [("dqn", c) for c in dqn_training.CONFIGS]
     with Pool(9) as pool:
         pool.map(run, jobs, chunksize=1)

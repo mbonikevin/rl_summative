@@ -62,7 +62,7 @@ def train(cfg, frames=FRAMES, seed=0):
         explore.step(data.numel())
 
         if frames_done % 2_000 == 0 and recent:
-            curve.append(dict(frames=frames_done, episode_reward=sum(recent[-20:]) / len(recent[-20:]),
+            curve.append(dict(frames=frames_done, episodes=len(recent), episode_reward=sum(recent[-20:]) / len(recent[-20:]),
                               loss=loss.item(), epsilon=explore.eps.item()))
     collector.shutdown()
 

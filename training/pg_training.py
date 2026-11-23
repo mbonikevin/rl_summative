@@ -122,16 +122,16 @@ def train(cfg, frames=FRAMES, seed=0):
                 batches = data.reshape(-1).split(500) if algo == "ppo" else [data.reshape(-1)]
                 for mb in batches:
                     out = loss_fn(mb)
-                    loss = out["loss_objective"] + out["loss_critic"] + out["loss_entropy"]
+                    loss = sum(v for k, v in out.items() if k.startswith("loss_"))  # no entropy loss when coeff is 0
                     optim.zero_grad()
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(loss_fn.parameters(), 1.0)
                     optim.step()
-            entropy = out["entropy"]
+            entropy = out["entropy"] if "entropy" in out.keys() else actor.get_dist(mb).entropy().mean()
             critic_loss = out["loss_critic"].item()
 
         if recent:
-            curve.append(dict(frames=frames_done, episode_reward=sum(recent[-20:]) / len(recent[-20:]),
+            curve.append(dict(frames=frames_done, episodes=len(recent), episode_reward=sum(recent[-20:]) / len(recent[-20:]),
                               loss=loss.item(), entropy=float(entropy.detach()), critic_loss=critic_loss))
     collector.shutdown()
 

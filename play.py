@@ -39,7 +39,7 @@ def main():
     parser.add_argument("--algo", choices=["dqn", "reinforce", "a2c", "ppo"])
     parser.add_argument("--episodes", type=int, default=3)
     parser.add_argument("--hard", action="store_true")
-    parser.add_argument("--seed", type=int, default=2026)
+    parser.add_argument("--seed", type=int, default=39)  # rush-hour start, good demo
     args = parser.parse_args()
 
     net, row = load_agent(args.algo)

@@ -1,0 +1,41 @@
+[project]
+name = "rl-summative"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "mbonikevin", email = "k.mbonimpay@alustudent.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "gymnasium>=1.4.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.5",
+    "pandas>=3.1.1",
+    "pygame-ce>=2.5.8",
+    "tensordict>=0.15.6",
+    "torch>=2.15.0",
+    "torchrl>=0.15.0",
+]
+
+[project.scripts]
+rl-summative = "rl_summative:main"
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

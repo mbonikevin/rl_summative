@@ -30,9 +30,9 @@ CUSTOMERS = ["N", "R", "G", "K"]  # possible delivery stops
 NAMES = {"D": "Depot", "N": "Nyabugogo", "R": "Remera", "G": "Gikondo", "K": "Kicukiro"}
 
 # actions
-UP, DOWN, LEFT, RIGHT, DELIVER = 0, 1, 2, 3, 4
+UP, DOWN, LEFT, RIGHT, WAIT = 0, 1, 2, 3, 4
 MOVES = {UP: (0, -1), DOWN: (0, 1), LEFT: (-1, 0), RIGHT: (1, 0)}
-ACTION_NAMES = ["up", "down", "left", "right", "deliver"]
+ACTION_NAMES = ["up", "down", "left", "right", "wait"]
 
 SHIFT_MINUTES = 240  # a 4 hour shift
 MAX_STEPS = 150
@@ -60,8 +60,9 @@ class KigaliFreightEnv(gym.Env):
         self.render_mode = render_mode
         self.hard = hard  # harder setting, only used to test generalization
         self.action_space = spaces.Discrete(5)
-        # [x, y, time of day, raining, rush hour, then (pending, slack) for each customer]
-        self.observation_space = spaces.Box(-1.0, 1.0, shape=(5 + 2 * len(CUSTOMERS),), dtype=np.float32)
+        # [x, y, time of day, raining, rush hour,
+        #  then (pending, slack, dx, dy) for each customer]
+        self.observation_space = spaces.Box(-1.0, 1.0, shape=(5 + 4 * len(CUSTOMERS),), dtype=np.float32)
         self.renderer = None
 
     def reset(self, seed=None, options=None):
@@ -95,13 +96,22 @@ class KigaliFreightEnv(gym.Env):
         for c in CUSTOMERS:
             if c in self.pending:
                 slack = (self.deadlines[c] - self.clock) / SHIFT_MINUTES
-                obs += [1.0, float(np.clip(slack, -1, 1))]
+                cx, cy = POSITIONS[c]
+                dx = (cx - self.pos[0]) / (SIZE - 1)  # direction to the stop
+                dy = (cy - self.pos[1]) / (SIZE - 1)
+                obs += [1.0, float(np.clip(slack, -1, 1)), dx, dy]
             else:
-                obs += [0.0, 0.0]
+                obs += [0.0, 0.0, 0.0, 0.0]
         return np.array(obs, dtype=np.float32)
 
     def _info(self):
         return {"clock": self.clock, "pending": len(self.pending), "on_time": self.on_time, "late": self.late}
+
+    def distance_to_nearest_stop(self):
+        if not self.pending:
+            return 0
+        x, y = self.pos
+        return min(abs(POSITIONS[c][0] - x) + abs(POSITIONS[c][1] - y) for c in self.pending)
 
     def travel_minutes(self, cell):
         """Minutes needed to drive into a cell. This is the simple traffic model."""
@@ -117,6 +127,7 @@ class KigaliFreightEnv(gym.Env):
         action = int(action)
         self.steps += 1
         reward = 0.0
+        old_distance = self.distance_to_nearest_stop()
 
         if action in MOVES:
             dx, dy = MOVES[action]
@@ -127,22 +138,24 @@ class KigaliFreightEnv(gym.Env):
             else:
                 minutes = 1
                 reward -= 1.0  # hit a wall or left the map
-        else:  # DELIVER
-            here = MAP[self.pos[1]][self.pos[0]]
-            if here in self.pending:
-                minutes = 5  # unloading
-                self.pending.remove(here)
-                if self.clock + minutes <= self.deadlines[here]:
-                    reward += 20.0
-                    self.on_time += 1
-                else:
-                    reward += 5.0
-                    self.late += 1
-            else:
-                minutes = 1
-                reward -= 1.0  # nothing to deliver here
+        else:  # WAIT: park for 10 minutes, e.g. to let rush hour pass
+            minutes = 10
 
+        # small hint: reward getting closer to the nearest pending stop
+        reward += 0.5 * (old_distance - self.distance_to_nearest_stop())
         self.clock += minutes
+
+        # arriving at a pending stop unloads the goods automatically
+        here = MAP[self.pos[1]][self.pos[0]]
+        if here in self.pending:
+            self.pending.remove(here)
+            self.clock += 5  # unloading
+            if self.clock <= self.deadlines[here]:
+                reward += 20.0
+                self.on_time += 1
+            else:
+                reward += 5.0
+                self.late += 1
         reward -= 0.1 * minutes  # every minute on the road costs fuel and time
 
         # weather can change during the shift

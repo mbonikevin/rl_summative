@@ -21,12 +21,13 @@ def test_every_stop_reachable_from_depot():
     assert all(p in seen for p in POSITIONS.values())
 
 
-def test_deliver_at_stop_gives_reward():
+def test_arriving_at_stop_delivers():
     env = KigaliFreightEnv()
     env.reset(seed=0)
     stop = next(iter(env.pending))
-    env.pos = POSITIONS[stop]
-    _, reward, _, _, info = env.step(4)
+    x, y = POSITIONS[stop]
+    env.pos = (x, y - 1) if MAP[y - 1][x] != "#" else (x, y + 1)
+    _, reward, _, _, _ = env.step(1 if env.pos[1] < y else 0)
     assert reward > 0 and stop not in env.pending
 
 

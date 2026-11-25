@@ -41,7 +41,6 @@ class Renderer:
         s.fill((30, 30, 35))
         rush = is_rush_hour(env.clock)
 
-        # map cells
         for y, row in enumerate(MAP):
             for x, ch in enumerate(row):
                 color = COLORS.get(ch, COLORS["."])
@@ -70,7 +69,6 @@ class Renderer:
         for wx in (body.x + 8, body.right - 8):
             pygame.draw.circle(s, (20, 20, 20), (wx, body.bottom), 5)
 
-        # side panel
         px = SIZE * CELL + 15
         h, m = divmod(env.clock % 1440, 60)
         lines = [
@@ -103,7 +101,7 @@ class Renderer:
 
 
 if __name__ == "__main__":
-    # random agent demo: shows the environment without any training
+    # random agent, no training
     from environment.custom_env import KigaliFreightEnv
 
     env = KigaliFreightEnv(render_mode="human")

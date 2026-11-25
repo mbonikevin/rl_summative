@@ -15,7 +15,7 @@ def run(job):
     module = dqn_training if kind == "dqn" else pg_training
     try:
         module.train(cfg)
-    except Exception as e:  # one failed run should not stop the whole sweep
+    except Exception as e:  # keep going if one crashes
         print("FAILED", cfg["name"], e, flush=True)
 
 

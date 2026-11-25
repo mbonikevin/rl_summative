@@ -7,7 +7,7 @@ import torch
 from torch import nn
 from torchrl.envs import Compose, GymEnv, RewardSum, StepCounter, TransformedEnv
 
-import environment.custom_env  # noqa: F401  (registers KigaliFreight-v0)
+import environment.custom_env  # noqa: F401
 from environment.custom_env import KigaliFreightEnv
 
 OBS_SIZE = 21

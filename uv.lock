@@ -884,7 +884,7 @@ wheels = [
 [[package]]
 name = "rl-summative"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "gymnasium" },
     { name = "matplotlib" },

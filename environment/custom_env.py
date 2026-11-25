@@ -58,7 +58,7 @@ class KigaliFreightEnv(gym.Env):
 
     def __init__(self, render_mode=None, hard=False):
         self.render_mode = render_mode
-        self.hard = hard  # harder setting, only used to test generalization
+        self.hard = hard  # for the generalization test
         self.action_space = spaces.Discrete(5)
         # [x, y, time of day, raining, rush hour,
         #  then (pending, slack, dx, dy) for each customer]
@@ -69,7 +69,7 @@ class KigaliFreightEnv(gym.Env):
         super().reset(seed=seed)
         rng = self.np_random
         self.pos = POSITIONS["D"]
-        self.clock = int(rng.integers(6 * 60, 18 * 60))  # shift starts between 6:00 and 18:00
+        self.clock = int(rng.integers(6 * 60, 18 * 60))
         self.start_clock = self.clock
         self.raining = rng.random() < (1.0 if self.hard else 0.3)
 
@@ -97,7 +97,7 @@ class KigaliFreightEnv(gym.Env):
             if c in self.pending:
                 slack = (self.deadlines[c] - self.clock) / SHIFT_MINUTES
                 cx, cy = POSITIONS[c]
-                dx = (cx - self.pos[0]) / (SIZE - 1)  # direction to the stop
+                dx = (cx - self.pos[0]) / (SIZE - 1)
                 dy = (cy - self.pos[1]) / (SIZE - 1)
                 obs += [1.0, float(np.clip(slack, -1, 1)), dx, dy]
             else:
@@ -137,15 +137,14 @@ class KigaliFreightEnv(gym.Env):
                 self.pos = (nx, ny)
             else:
                 minutes = 1
-                reward -= 1.0  # hit a wall or left the map
-        else:  # WAIT: park for 10 minutes, e.g. to let rush hour pass
+                reward -= 1.0  # wall
+        else:  # wait 10 min
             minutes = 10
 
-        # small hint: reward getting closer to the nearest pending stop
+        # shaping
         reward += 0.5 * (old_distance - self.distance_to_nearest_stop())
         self.clock += minutes
 
-        # arriving at a pending stop unloads the goods automatically
         here = MAP[self.pos[1]][self.pos[0]]
         if here in self.pending:
             self.pending.remove(here)
@@ -156,9 +155,8 @@ class KigaliFreightEnv(gym.Env):
             else:
                 reward += 5.0
                 self.late += 1
-        reward -= 0.1 * minutes  # every minute on the road costs fuel and time
+        reward -= 0.1 * minutes
 
-        # weather can change during the shift
         if not self.hard and self.np_random.random() < 0.05:
             self.raining = not self.raining
 
@@ -166,7 +164,7 @@ class KigaliFreightEnv(gym.Env):
         truncated = False
         if not terminated and (self.clock - self.start_clock >= SHIFT_MINUTES or self.steps >= MAX_STEPS):
             truncated = True
-            reward -= 10.0 * len(self.pending)  # deliveries never made
+            reward -= 10.0 * len(self.pending)  # missed ones
 
         self.last_reward = reward
         self.total_reward += reward

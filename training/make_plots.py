@@ -21,7 +21,7 @@ def curve(run):
     return df
 
 
-# 1. cumulative reward per episode, best run of each method (one subplot each)
+# best run of each algo
 fig, axes = plt.subplots(2, 2, figsize=(11, 7), sharey=True)
 for ax, algo in zip(axes.flat, ALGOS):
     df = curve(best.loc[algo, "run"])
@@ -34,7 +34,7 @@ fig.supylabel("episode reward (mean of last 20)")
 fig.tight_layout()
 fig.savefig(f"{OUT}/reward_curves.png", dpi=150)
 
-# 2. every run of every algorithm (shows the hyperparameter effect)
+# all runs
 fig, axes = plt.subplots(2, 2, figsize=(11, 7), sharey=True)
 for ax, algo in zip(axes.flat, ALGOS):
     for run in results[results["algo"] == algo]["run"]:
@@ -48,7 +48,7 @@ fig.supylabel("mean episode reward")
 fig.tight_layout()
 fig.savefig(f"{OUT}/sweep_curves.png", dpi=150)
 
-# 3. DQN objective (TD loss) and epsilon
+# dqn loss and epsilon
 df = pd.read_csv(f"logs/curves/{best.loc['DQN', 'run']}.csv")
 fig, ax = plt.subplots(figsize=(8, 4))
 ax.plot(df["episodes"], df["loss"].rolling(10, min_periods=1).mean(), color=COLORS["DQN"], label="TD loss")
@@ -62,7 +62,7 @@ fig.legend(loc="upper right")
 fig.tight_layout()
 fig.savefig(f"{OUT}/dqn_loss.png", dpi=150)
 
-# 4. policy entropy of the policy-gradient methods
+# entropy (pg only)
 plt.figure(figsize=(8, 4))
 for algo in ["REINFORCE", "A2C", "PPO"]:
     df = curve(best.loc[algo, "run"])
@@ -76,7 +76,7 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(f"{OUT}/pg_entropy.png", dpi=150)
 
-# 5. generalization: normal vs harder unseen setting
+# normal vs hard setting
 fig, ax = plt.subplots(figsize=(8, 4))
 x = range(len(ALGOS))
 ax.bar([i - 0.2 for i in x], [best.loc[a, "on_time_rate"] for a in ALGOS], 0.4, label="normal (unseen seeds)")
@@ -90,8 +90,7 @@ fig.tight_layout()
 fig.savefig(f"{OUT}/generalization.png", dpi=150)
 
 
-# 6. tables: hyperparameters + results, and convergence speed
-THRESHOLD = 20  # "converged" = smoothed episode reward stays at a level where most deliveries are on time
+THRESHOLD = 20  # around here most deliveries are on time
 
 
 def episodes_to(run, threshold=THRESHOLD):
@@ -100,7 +99,6 @@ def episodes_to(run, threshold=THRESHOLD):
     return int(hit["episodes"].iloc[0]) if len(hit) else None
 
 
-# episodes to converge, one subplot per method
 fig, axes = plt.subplots(1, 4, figsize=(14, 3.6), sharey=True)
 for ax, algo in zip(axes, ALGOS):
     run = best.loc[algo, "run"]

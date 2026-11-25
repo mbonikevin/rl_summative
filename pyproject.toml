@@ -1,7 +1,7 @@
 [project]
 name = "rl-summative"
 version = "0.1.0"
-description = "Add your description here"
+description = "RL summative, Kigali freight delivery"
 authors = [
     { name = "mbonikevin", email = "k.mbonimpay@alustudent.com" }
 ]
@@ -17,13 +17,6 @@ dependencies = [
     "torch>=2.15.0",
     "torchrl>=0.15.0",
 ]
-
-[project.scripts]
-rl-summative = "rl_summative:main"
-
-[build-system]
-requires = ["uv_build>=0.13.8,<0.14.0"]
-build-backend = "uv_build"
 
 [[tool.uv.index]]
 name = "pytorch-cpu"

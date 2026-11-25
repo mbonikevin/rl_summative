@@ -13,7 +13,7 @@ from training.common import append_result, evaluate, make_env, make_net, save_cu
 
 FRAMES = 300_000
 
-# 11 configs (double DQN on by default): each changes the learning rate, discount, replay, batch, exploration or target update
+# double dqn on by default
 CONFIGS = [
     dict(name="dqn_01_baseline", lr=1e-3, gamma=0.99, buffer=20_000, batch=64, eps_end=0.05, eps_frames=20_000, tau=0.01, double=True),
     dict(name="dqn_02_low_lr", lr=1e-4, gamma=0.99, buffer=20_000, batch=64, eps_end=0.05, eps_frames=20_000, tau=0.01, double=True),
@@ -53,7 +53,7 @@ def train(cfg, frames=FRAMES, seed=0):
 
         if len(buffer) < 1_000:
             continue
-        for _ in range(10):  # 10 gradient steps per 100 frames
+        for _ in range(10):
             loss = loss_fn(buffer.sample())["loss"]
             optim.zero_grad()
             loss.backward()
@@ -80,7 +80,7 @@ def train(cfg, frames=FRAMES, seed=0):
 
 
 if __name__ == "__main__":
-    # optional: pass config numbers, e.g. "python -m training.dqn_training 1 2"
+    # e.g. python -m training.dqn_training 1 2
     picks = [int(i) - 1 for i in sys.argv[1:]] or range(len(CONFIGS))
     for i in picks:
         train(CONFIGS[i])

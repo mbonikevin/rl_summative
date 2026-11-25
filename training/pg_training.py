@@ -71,7 +71,7 @@ def make_actor_critic(env):
 
 def make_value_net():
     net = make_net()
-    net[-1] = torch.nn.Linear(net[-1].in_features, 1)  # one output: the state value
+    net[-1] = torch.nn.Linear(net[-1].in_features, 1)  # value head
     return net
 
 
@@ -103,7 +103,7 @@ def train(cfg, frames=FRAMES, seed=0):
         recent += finished_rewards(data)
 
         if algo == "reinforce":
-            # Monte Carlo return of each step, then push up log-prob of actions with high return
+            # reinforce: MC returns
             returns = reward2go(data["next", "reward"], data["next", "done"], gamma=cfg["gamma"])
             returns = (returns - returns.mean()) / (returns.std() + 1e-8)
             dist = actor.get_dist(data)
@@ -122,7 +122,7 @@ def train(cfg, frames=FRAMES, seed=0):
                 batches = data.reshape(-1).split(500) if algo == "ppo" else [data.reshape(-1)]
                 for mb in batches:
                     out = loss_fn(mb)
-                    loss = sum(v for k, v in out.items() if k.startswith("loss_"))  # no entropy loss when coeff is 0
+                    loss = sum(v for k, v in out.items() if k.startswith("loss_"))  # no loss_entropy if coef is 0
                     optim.zero_grad()
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(loss_fn.parameters(), 1.0)

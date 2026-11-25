@@ -92,7 +92,7 @@ class Renderer:
 
         if self.mode == "human":
             pygame.display.flip()
-            self.clock.tick(6)
+            self.clock.tick(env.metadata["render_fps"])
             return None
         return np.transpose(pygame.surfarray.array3d(s), (1, 0, 2))
 

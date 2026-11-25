@@ -3,6 +3,7 @@
 uv run play.py                     best agent overall
 uv run play.py --algo ppo          best PPO run
 uv run play.py --hard --episodes 5 harder unseen setting (rain + 3 tight deadlines)
+uv run play.py --fps 1             slower (default 2 steps per second)
 """
 import argparse
 import csv
@@ -39,6 +40,7 @@ def main():
     parser.add_argument("--algo", choices=["dqn", "reinforce", "a2c", "ppo"])
     parser.add_argument("--episodes", type=int, default=3)
     parser.add_argument("--hard", action="store_true")
+    parser.add_argument("--fps", type=float, default=2)  # slow enough to talk over
     parser.add_argument("--seed", type=int, default=39)  # rush hour start
     args = parser.parse_args()
 
@@ -49,6 +51,7 @@ def main():
           f"on-time rate {float(row['on_time_rate']):.0%}")
 
     env = KigaliFreightEnv(render_mode="human", hard=args.hard)
+    env.metadata = {**env.metadata, "render_fps": args.fps}
     for ep in range(args.episodes):
         obs, info = env.reset(seed=args.seed + ep)
         jobs = ", ".join(f"{NAMES[c]} by {d // 60 % 24:02d}:{d % 60:02d}" for c, d in env.deadlines.items())
